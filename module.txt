@@ -1,0 +1,17 @@
+1)touch file1.txt
+chmod a+x file1.txt
+
+2) touch file2.txt 
+   chmod g-w file2.txt 
+
+
+3) mkdir dir1/dir2 
+   touch dir1/dir2/file3.txt 
+   ln -s dir1/dir2/file3.txt  dir1/file3_new.txt
+
+4) ps aux 
+  
+
+5) touch dir1/file_a.txt  dir1/file_b.txt  dir1/file_c.txt
+   ls -lt  dir1 > dir1/output.txt
+   
