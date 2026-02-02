@@ -88,3 +88,6 @@ REPORT="$BACKUP_DIR/backup_report.log"
 
 echo "Backup completed successfully"
 echo "Report saved at $REPORT"
+
+
+To run this :  ./backup_manager.sh /home/user/source /home/user/backup .txt
