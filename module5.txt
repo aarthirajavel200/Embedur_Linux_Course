@@ -1,0 +1,144 @@
+nano file_analyzer.sh
+
+
+#!/bin/bash
+
+
+ERROR_LOG="errors.log"
+
+#  1. ERROR HANDLING 
+log_error() {
+    echo "Error: $1" | tee -a "$ERROR_LOG"
+}
+
+#  (HELP MENU) 
+show_help() {
+cat << EOF
+Usage: $0 [options]
+
+Options:
+  -d <directory>   Directory to search recursively
+  -f <file>        File to search directly
+  -k <keyword>     Keyword to search
+  --help           Display this help menu
+
+Examples:
+  $0 -d logs -k error
+  $0 -f script.sh -k TODO
+  $0 --help
+EOF
+}
+
+# 3. REGEX VALIDATION 
+validate_keyword() {
+    if [[ -z "$1" ]]; then
+        log_error "Keyword is empty"
+        exit 1
+    fi
+
+    if [[ ! "$1" =~ ^[a-zA-Z0-9_]+$ ]]; then
+        log_error "Invalid keyword format"
+        exit 1
+    fi
+}
+
+# 4. RECURSIVE FUNCTION 
+search_directory() {
+    local dir="$1"
+    local keyword="$2"
+
+    for item in "$dir"/*; do
+        if [[ -d "$item" ]]; then
+            search_directory "$item" "$keyword"
+        elif [[ -f "$item" ]]; then
+            if grep -q "$keyword" "$item"; then
+                echo "Keyword found in: $item"
+            fi
+        fi
+    done
+}
+
+#  5. HERE STRING (FILE SEARCH)
+search_file() {
+    local file="$1"
+    local keyword="$2"
+
+    if [[ ! -f "$file" ]]; then
+        log_error "File does not exist: $file"
+        exit 1
+    fi
+
+    file_content=$(cat "$file")
+
+    if grep -q "$keyword" <<< "$file_content"; then
+        echo "Keyword found in file: $file"
+    else
+        echo "Keyword not found in file: $file"
+    fi
+}
+
+# 6. GETOPTS 
+if [[ $# -eq 0 ]]; then
+    log_error "No arguments provided"
+    show_help
+    exit 1
+fi
+
+while getopts ":d:f:k:-:" opt; do
+    case "$opt" in
+        d) DIRECTORY="$OPTARG" ;;
+        f) FILE="$OPTARG" ;;
+        k) KEYWORD="$OPTARG" ;;
+        -)
+            case "$OPTARG" in
+                help)
+                    show_help
+                    exit 0
+                    ;;
+                *)
+                    log_error "Invalid option --$OPTARG"
+                    exit 1
+                    ;;
+            esac
+            ;;
+        *)
+            log_error "Invalid option"
+            exit 1
+            ;;
+    esac
+done
+
+# 7. SPECIAL PARAMETERS
+echo "Script Name : $0"
+echo "Total Args  : $#"
+echo "All Args    : $@"
+
+# 8. VALIDATIONS 
+validate_keyword "$KEYWORD"
+
+# 9. MAIN LOGIC 
+if [[ -n "$DIRECTORY" ]]; then
+    if [[ ! -d "$DIRECTORY" ]]; then
+        log_error "Directory does not exist: $DIRECTORY"
+        exit 1
+    fi
+    search_directory "$DIRECTORY" "$KEYWORD"
+
+elif [[ -n "$FILE" ]]; then
+    search_file "$FILE" "$KEYWORD"
+
+else
+    log_error "Either directory (-d) or file (-f) must be provided"
+    show_help
+    exit 1
+fi
+
+#  10. EXIT STATUS 
+if [[ $? -eq 0 ]]; then
+    echo "Search completed successfully"
+else
+    echo "Search failed"
+fi
+
+chmod +x file_analyzer.sh
+
